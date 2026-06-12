@@ -1,0 +1,6 @@
+{
+  "name": "VPN Pro",
+  "description": "Modern dark mode VPN application with server list.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
