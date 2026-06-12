@@ -17,6 +17,8 @@ class VpnViewModel(application: Application) : AndroidViewModel(application) {
     private val repository = VpnRepository()
     private val vpnEngine = VpnEngineService(application)
 
+    private val sharedPrefs = application.getSharedPreferences("vpn_prefs", android.content.Context.MODE_PRIVATE)
+
     private val _servers = MutableStateFlow<List<VpnServer>>(emptyList())
     val servers: StateFlow<List<VpnServer>> = _servers
 
@@ -27,6 +29,28 @@ class VpnViewModel(application: Application) : AndroidViewModel(application) {
 
     private val _connectionTime = MutableStateFlow(0)
     val connectionTime: StateFlow<Int> = _connectionTime
+
+    private val _downloadSpeed = MutableStateFlow("0.0")
+    val downloadSpeed: StateFlow<String> = _downloadSpeed
+
+    private val _uploadSpeed = MutableStateFlow("0.0")
+    val uploadSpeed: StateFlow<String> = _uploadSpeed
+
+    private val _autoConnect = MutableStateFlow(sharedPrefs.getBoolean("auto_connect", false))
+    val autoConnect: StateFlow<Boolean> = _autoConnect
+
+    private val _killSwitch = MutableStateFlow(sharedPrefs.getBoolean("kill_switch", false))
+    val killSwitch: StateFlow<Boolean> = _killSwitch
+
+    fun toggleAutoConnect(enabled: Boolean) {
+        _autoConnect.value = enabled
+        sharedPrefs.edit().putBoolean("auto_connect", enabled).apply()
+    }
+
+    fun toggleKillSwitch(enabled: Boolean) {
+        _killSwitch.value = enabled
+        sharedPrefs.edit().putBoolean("kill_switch", enabled).apply()
+    }
 
     private var timerJob: Job? = null
 
@@ -44,10 +68,12 @@ class VpnViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     private fun loadServers() {
-        val loadedServers = repository.getServers()
-        _servers.value = loadedServers
-        if (loadedServers.isNotEmpty()) {
-            _selectedServer.value = loadedServers.first()
+        viewModelScope.launch {
+            val loadedServers = repository.getServers()
+            _servers.value = loadedServers
+            if (loadedServers.isNotEmpty() && _selectedServer.value == null) {
+                _selectedServer.value = loadedServers.first()
+            }
         }
     }
 
@@ -79,6 +105,15 @@ class VpnViewModel(application: Application) : AndroidViewModel(application) {
             while (true) {
                 delay(1000)
                 _connectionTime.value += 1
+                
+                // Simulate speed based on max capability
+                val baseDown = (10..50).random()
+                val decDown = (0..9).random()
+                _downloadSpeed.value = "$baseDown.$decDown"
+                
+                val baseUp = (5..20).random()
+                val decUp = (0..9).random()
+                _uploadSpeed.value = "$baseUp.$decUp"
             }
         }
     }
@@ -86,5 +121,7 @@ class VpnViewModel(application: Application) : AndroidViewModel(application) {
     private fun stopTimer() {
         timerJob?.cancel()
         timerJob = null
+        _downloadSpeed.value = "0.0"
+        _uploadSpeed.value = "0.0"
     }
 }

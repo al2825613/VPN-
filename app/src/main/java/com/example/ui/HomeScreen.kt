@@ -43,7 +43,13 @@ fun HomeScreen(viewModel: VpnViewModel, onNavigateToServerList: () -> Unit) {
     val state by viewModel.vpnState.collectAsState()
     val server by viewModel.selectedServer.collectAsState()
     val timer by viewModel.connectionTime.collectAsState()
+    val downloadSpeed by viewModel.downloadSpeed.collectAsState()
+    val uploadSpeed by viewModel.uploadSpeed.collectAsState()
+    val autoConnect by viewModel.autoConnect.collectAsState()
+    val killSwitch by viewModel.killSwitch.collectAsState()
     val context = LocalContext.current
+    
+    var showSettings by remember { mutableStateOf(false) }
 
     val vpnLauncher = rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
         if (result.resultCode == Activity.RESULT_OK) {
@@ -113,7 +119,8 @@ fun HomeScreen(viewModel: VpnViewModel, onNavigateToServerList: () -> Unit) {
                         .size(40.dp)
                         .clip(CircleShape)
                         .background(VpnSurface)
-                        .border(1.dp, VpnSurfaceBorder, CircleShape),
+                        .border(1.dp, VpnSurfaceBorder, CircleShape)
+                        .clickable { showSettings = true },
                     contentAlignment = Alignment.Center
                 ) {
                     Icon(
@@ -149,18 +156,13 @@ fun HomeScreen(viewModel: VpnViewModel, onNavigateToServerList: () -> Unit) {
                     ) {
                         // Small icon element
                         Box(
-                            modifier = Modifier
-                                .size(width = 24.dp, height = 16.dp)
-                                .clip(RoundedCornerShape(2.dp))
-                                .background(Color(0xFF2563EB))
+                            modifier = Modifier.size(width = 30.dp, height = 30.dp),
+                            contentAlignment = Alignment.Center
                         ) {
-                            Column(
-                                modifier = Modifier.fillMaxSize(),
-                                verticalArrangement = Arrangement.SpaceEvenly
-                            ) {
-                                Box(modifier = Modifier.fillMaxWidth().height(2.dp).background(Color.White))
-                                Box(modifier = Modifier.fillMaxWidth().height(2.dp).background(Color(0xFFDC2626)))
-                            }
+                            Text(
+                                text = server?.countryCode?.let { countryCodeToEmojiFlag(it) } ?: "🗺️",
+                                fontSize = 24.sp
+                            )
                         }
                         
                         Column {
@@ -271,7 +273,7 @@ fun HomeScreen(viewModel: VpnViewModel, onNavigateToServerList: () -> Unit) {
                         icon = Icons.Default.ArrowDownward,
                         iconColor = VpnCyan,
                         title = "DOWNLOAD",
-                        value = if (state == VpnState.CONNECTED) "42.8" else "0.0",
+                        value = downloadSpeed,
                         unit = "Mbps"
                     )
                     StatCard(
@@ -279,7 +281,7 @@ fun HomeScreen(viewModel: VpnViewModel, onNavigateToServerList: () -> Unit) {
                         icon = Icons.Default.ArrowUpward,
                         iconColor = VpnPurple,
                         title = "UPLOAD",
-                        value = if (state == VpnState.CONNECTED) "18.2" else "0.0",
+                        value = uploadSpeed,
                         unit = "Mbps"
                     )
                 }
@@ -307,6 +309,58 @@ fun HomeScreen(viewModel: VpnViewModel, onNavigateToServerList: () -> Unit) {
                 Spacer(modifier = Modifier.height(8.dp))
             }
         }
+    }
+    
+    if (showSettings) {
+        androidx.compose.material3.AlertDialog(
+            onDismissRequest = { showSettings = false },
+            containerColor = VpnSurface,
+            titleContentColor = Color.White,
+            textContentColor = Color.Gray,
+            title = {
+                Text(text = "Settings", fontWeight = FontWeight.Bold)
+            },
+            text = {
+                Column(modifier = Modifier.fillMaxWidth()) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Text("Auto-Connect on Startup", color = Color.White, fontSize = 16.sp)
+                        androidx.compose.material3.Switch(
+                            checked = autoConnect,
+                            onCheckedChange = { viewModel.toggleAutoConnect(it) },
+                            colors = androidx.compose.material3.SwitchDefaults.colors(
+                                checkedThumbColor = VpnCyan,
+                                checkedTrackColor = VpnCyan.copy(alpha = 0.5f)
+                            )
+                        )
+                    }
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Row(
+                        modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Text("Kill Switch", color = Color.White, fontSize = 16.sp)
+                        androidx.compose.material3.Switch(
+                            checked = killSwitch,
+                            onCheckedChange = { viewModel.toggleKillSwitch(it) },
+                            colors = androidx.compose.material3.SwitchDefaults.colors(
+                                checkedThumbColor = VpnCyan,
+                                checkedTrackColor = VpnCyan.copy(alpha = 0.5f)
+                            )
+                        )
+                    }
+                }
+            },
+            confirmButton = {
+                androidx.compose.material3.TextButton(onClick = { showSettings = false }) {
+                    Text("DONE", color = VpnCyan, fontWeight = FontWeight.Bold)
+                }
+            }
+        )
     }
 }
 

@@ -1,21 +1,20 @@
 package com.example.models
 
-import com.squareup.moshi.Json
-import com.squareup.moshi.JsonClass
-
-@JsonClass(generateAdapter = true)
 data class VpnServer(
-    val id: Int,
-    @Json(name = "country_code") val countryCode: String,
-    val city: String,
+    val id: String, // will act as ID (e.g. base64 or IP)
+    val hostName: String,
     val ip: String,
-    val protocol: String,
-    val port: Int,
-    @Json(name = "vpn_username") val vpnUsername: String,
-    @Json(name = "vpn_password") val vpnPassword: String,
-    @Json(name = "is_free") val isFree: Int,
-    val order: Int,
-    @Json(name = "use_file") val useFile: Int,
-    @Json(name = "free_connect_duration") val freeConnectDuration: Int,
-    @Json(name = "connected_devices") val connectedDevices: Int
-)
+    val score: Int,
+    val ping: Int,
+    val speed: Long,
+    val countryLong: String,
+    val countryShort: String,
+    val openVpnConfigBase64: String
+) {
+    // For compatibility with previous UI fields:
+    val countryCode: String get() = countryShort
+    val city: String get() = countryLong
+    val connectedDevices: Int get() = ping // Show ping instead of devices
+    val protocol: String get() = "udp"
+    val port: Int get() = 1194
+}

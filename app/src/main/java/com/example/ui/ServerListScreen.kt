@@ -25,6 +25,13 @@ import com.example.models.VpnServer
 import com.example.viewmodel.VpnViewModel
 import com.example.ui.theme.*
 
+fun countryCodeToEmojiFlag(countryCode: String): String {
+    if (countryCode.length != 2) return "🗺️"
+    val firstLetter = Character.codePointAt(countryCode.uppercase(), 0) - 0x41 + 0x1F1E6
+    val secondLetter = Character.codePointAt(countryCode.uppercase(), 1) - 0x41 + 0x1F1E6
+    return String(Character.toChars(firstLetter)) + String(Character.toChars(secondLetter))
+}
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ServerListScreen(viewModel: VpnViewModel, onBack: () -> Unit) {
@@ -71,6 +78,8 @@ fun ServerListScreen(viewModel: VpnViewModel, onBack: () -> Unit) {
 
 @Composable
 fun ServerItem(server: VpnServer, isSelected: Boolean, onClick: () -> Unit) {
+    val speedMbps = String.format("%.1f", server.speed / 1_000_000f)
+    
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -85,10 +94,10 @@ fun ServerItem(server: VpnServer, isSelected: Boolean, onClick: () -> Unit) {
             modifier = Modifier
                 .size(48.dp)
                 .clip(RoundedCornerShape(12.dp))
-                .background(Color.White.copy(alpha = 0.1f)),
+                .background(Color.White.copy(alpha = 0.05f)),
             contentAlignment = Alignment.Center
         ) {
-            Text(server.countryCode.uppercase(), color = Color.White, fontWeight = FontWeight.Bold, fontSize = 16.sp)
+            Text(countryCodeToEmojiFlag(server.countryCode), fontSize = 24.sp)
         }
 
         Spacer(modifier = Modifier.width(16.dp))
@@ -102,9 +111,20 @@ fun ServerItem(server: VpnServer, isSelected: Boolean, onClick: () -> Unit) {
             )
             Spacer(modifier = Modifier.height(4.dp))
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Box(modifier = Modifier.size(8.dp).clip(RoundedCornerShape(4.dp)).background(Color(0xFF22C55E))) // green-500
+                val pingColor = when {
+                    server.ping < 100 -> Color(0xFF22C55E) // Green
+                    server.ping < 200 -> Color(0xFFEAB308) // Yellow
+                    else -> Color(0xFFEF4444) // Red
+                }
+                Box(modifier = Modifier.size(8.dp).clip(RoundedCornerShape(4.dp)).background(pingColor))
                 Spacer(modifier = Modifier.width(6.dp))
-                Text("${server.connectedDevices} Load Level", color = Color.Gray, fontSize = 13.sp)
+                Text("${server.ping} ms", color = Color.Gray, fontSize = 13.sp)
+                
+                Spacer(modifier = Modifier.width(12.dp))
+                
+                Box(modifier = Modifier.size(8.dp).clip(RoundedCornerShape(4.dp)).background(VpnCyan))
+                Spacer(modifier = Modifier.width(6.dp))
+                Text("$speedMbps Mbps", color = Color.Gray, fontSize = 13.sp)
             }
         }
 
