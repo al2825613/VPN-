@@ -52,6 +52,28 @@ class VpnViewModel(application: Application) : AndroidViewModel(application) {
         sharedPrefs.edit().putBoolean("kill_switch", enabled).apply()
     }
 
+    private val _recentServers = MutableStateFlow<List<VpnServer>>(emptyList())
+    val recentServers: StateFlow<List<VpnServer>> = _recentServers
+
+    private fun updateRecentServersFlow() {
+        val orderedRecentStr = sharedPrefs.getString("recent_servers_ordered", "") ?: ""
+        if (orderedRecentStr.isEmpty()) {
+            _recentServers.value = emptyList()
+            return
+        }
+        val orderedRecent = orderedRecentStr.split(",")
+        val allServers = _servers.value
+        _recentServers.value = orderedRecent.mapNotNull { id -> allServers.find { it.id == id } }
+    }
+
+    private fun addRecentServer(server: VpnServer) {
+        val orderedRecentStr = sharedPrefs.getString("recent_servers_ordered", "") ?: ""
+        var orderedRecent = if (orderedRecentStr.isEmpty()) emptyList() else orderedRecentStr.split(",")
+        orderedRecent = (listOf(server.id) + orderedRecent.filter { it != server.id }).take(3)
+        sharedPrefs.edit().putString("recent_servers_ordered", orderedRecent.joinToString(",")).apply()
+        updateRecentServersFlow()
+    }
+
     private var timerJob: Job? = null
 
     init {
@@ -59,6 +81,7 @@ class VpnViewModel(application: Application) : AndroidViewModel(application) {
         viewModelScope.launch {
             vpnEngine.currentState.collect { state ->
                 if (state == VpnState.CONNECTED) {
+                    _selectedServer.value?.let { addRecentServer(it) }
                     startTimer()
                 } else if (state == VpnState.DISCONNECTED || state == VpnState.ERROR) {
                     stopTimer()
@@ -71,6 +94,7 @@ class VpnViewModel(application: Application) : AndroidViewModel(application) {
         viewModelScope.launch {
             val loadedServers = repository.getServers()
             _servers.value = loadedServers
+            updateRecentServersFlow()
             if (loadedServers.isNotEmpty() && _selectedServer.value == null) {
                 _selectedServer.value = loadedServers.first()
             }

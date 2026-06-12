@@ -36,6 +36,7 @@ fun countryCodeToEmojiFlag(countryCode: String): String {
 @Composable
 fun ServerListScreen(viewModel: VpnViewModel, onBack: () -> Unit) {
     val servers by viewModel.servers.collectAsState()
+    val recentServers by viewModel.recentServers.collectAsState()
     val selectedServer by viewModel.selectedServer.collectAsState()
 
     Scaffold(
@@ -62,6 +63,39 @@ fun ServerListScreen(viewModel: VpnViewModel, onBack: () -> Unit) {
             contentPadding = PaddingValues(vertical = 16.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
+            if (recentServers.isNotEmpty()) {
+                item {
+                    Text(
+                        "RECENT",
+                        color = Color.Gray,
+                        modifier = Modifier.padding(bottom = 4.dp, start = 8.dp),
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 12.sp,
+                        letterSpacing = 1.sp
+                    )
+                }
+                items(recentServers) { server ->
+                    ServerItem(
+                        server = server,
+                        isSelected = selectedServer?.id == server.id,
+                        onClick = {
+                            viewModel.selectServer(server)
+                            onBack()
+                        }
+                    )
+                }
+                item {
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text(
+                        "ALL SERVERS",
+                        color = Color.Gray,
+                        modifier = Modifier.padding(bottom = 4.dp, start = 8.dp),
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 12.sp,
+                        letterSpacing = 1.sp
+                    )
+                }
+            }
             items(servers) { server ->
                 ServerItem(
                     server = server,
@@ -103,14 +137,14 @@ fun ServerItem(server: VpnServer, isSelected: Boolean, onClick: () -> Unit) {
         Spacer(modifier = Modifier.width(16.dp))
 
         Column(modifier = Modifier.weight(1f)) {
-            Text(
-                server.city,
-                color = Color.White,
-                fontSize = 18.sp,
-                fontWeight = FontWeight.SemiBold
-            )
-            Spacer(modifier = Modifier.height(4.dp))
             Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(
+                    server.city,
+                    color = Color.White,
+                    fontSize = 18.sp,
+                    fontWeight = FontWeight.SemiBold
+                )
+                Spacer(modifier = Modifier.width(8.dp))
                 val pingColor = when {
                     server.ping < 100 -> Color(0xFF22C55E) // Green
                     server.ping < 200 -> Color(0xFFEAB308) // Yellow
@@ -119,9 +153,9 @@ fun ServerItem(server: VpnServer, isSelected: Boolean, onClick: () -> Unit) {
                 Box(modifier = Modifier.size(8.dp).clip(RoundedCornerShape(4.dp)).background(pingColor))
                 Spacer(modifier = Modifier.width(6.dp))
                 Text("${server.ping} ms", color = Color.Gray, fontSize = 13.sp)
-                
-                Spacer(modifier = Modifier.width(12.dp))
-                
+            }
+            Spacer(modifier = Modifier.height(4.dp))
+            Row(verticalAlignment = Alignment.CenterVertically) {
                 Box(modifier = Modifier.size(8.dp).clip(RoundedCornerShape(4.dp)).background(VpnCyan))
                 Spacer(modifier = Modifier.width(6.dp))
                 Text("$speedMbps Mbps", color = Color.Gray, fontSize = 13.sp)

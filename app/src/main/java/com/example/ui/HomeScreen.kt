@@ -186,13 +186,22 @@ fun HomeScreen(viewModel: VpnViewModel, onNavigateToServerList: () -> Unit) {
                 
                 // Central Connect Button
                 Box(contentAlignment = Alignment.Center, modifier = Modifier.padding(vertical = 16.dp)) {
+                    val statusColor by androidx.compose.animation.animateColorAsState(
+                        targetValue = when (state) {
+                            VpnState.CONNECTED -> Color(0xFF22C55E) // Green
+                            VpnState.CONNECTING, VpnState.DISCONNECTING -> Color(0xFFEAB308) // Yellow
+                            else -> Color.Gray
+                        },
+                        label = "statusColor"
+                    )
+
                     // Glow background
                     if (state == VpnState.CONNECTED || state == VpnState.CONNECTING) {
                         Box(
                             modifier = Modifier
                                 .size(250.dp)
                                 .blur(80.dp)
-                                .background(VpnCyan.copy(alpha = 0.2f), CircleShape)
+                                .background(statusColor.copy(alpha = 0.2f), CircleShape)
                         )
                     }
                     
@@ -200,7 +209,7 @@ fun HomeScreen(viewModel: VpnViewModel, onNavigateToServerList: () -> Unit) {
                     Box(
                         modifier = Modifier
                             .size(208.dp)
-                            .border(4.dp, VpnCyan.copy(alpha = 0.2f), CircleShape),
+                            .border(4.dp, statusColor.copy(alpha = 0.2f), CircleShape),
                         contentAlignment = Alignment.Center
                     ) {
                         // Inner button
@@ -234,13 +243,14 @@ fun HomeScreen(viewModel: VpnViewModel, onNavigateToServerList: () -> Unit) {
                                         .size(64.dp)
                                         .clip(CircleShape)
                                         // Glow for icon
-                                        .background(if (state == VpnState.DISCONNECTED || state == VpnState.ERROR) Color.Gray else Color(0xFF06B6D4)),
+                                        .background(statusColor.copy(alpha = 0.2f))
+                                        .border(2.dp, statusColor, CircleShape),
                                     contentAlignment = Alignment.Center
                                 ) {
                                     Icon(
-                                        imageVector = Icons.Default.PowerSettingsNew,
-                                        contentDescription = "power_button",
-                                        tint = Color.White,
+                                        imageVector = Icons.Default.Security,
+                                        contentDescription = "status_icon",
+                                        tint = statusColor,
                                         modifier = Modifier.size(36.dp)
                                     )
                                 }
@@ -255,7 +265,7 @@ fun HomeScreen(viewModel: VpnViewModel, onNavigateToServerList: () -> Unit) {
                                     },
                                     fontSize = 12.sp,
                                     fontWeight = FontWeight.Bold,
-                                    color = if (state == VpnState.DISCONNECTED || state == VpnState.ERROR) Color.Gray else VpnCyan,
+                                    color = statusColor,
                                     letterSpacing = 2.sp
                                 )
                             }
